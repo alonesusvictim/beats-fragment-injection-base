@@ -1,0 +1,3 @@
+kind: enhancement
+summary: Control arm, an ordinary version string with no shell metacharacters
+component: lab
