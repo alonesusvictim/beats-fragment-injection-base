@@ -31,19 +31,20 @@ jobs:
       if: always()
       run: |
         echo "--- added by the lab; lines 1-29 above are Elastic's, byte for byte ---"
+        echo "runs-on resolved to: $(grep PRETTY_NAME /etc/os-release), user $(whoami), host $(hostname)"
         if [ -e PWNED ]; then
-          echo "RESULT=EXECUTED  the version string broke out of the command line and ran a command"
-          ls -l PWNED
+          echo "RESULT=EXECUTED  a command ran"; ls -l PWNED
         elif [ -e CONFIGPROOF ]; then
-          echo "RESULT=EXECUTED  the version string broke out and the command read a file"
-          echo "copied bytes: $(wc -c < CONFIGPROOF)"
-          echo "credential header present: $(grep -c -i 'AUTHORIZATION' CONFIGPROOF)"
-          echo "credential length in bytes: $(grep -i 'AUTHORIZATION' CONFIGPROOF | tr -d '\n' | wc -c)"
-          echo "--- copied file, credential value redacted by the lab ---"
-          sed -E 's/(AUTHORIZATION[^=]*=).*/\1 [REDACTED BY THE LAB]/I' CONFIGPROOF
+          echo "RESULT=EXECUTED  a command read .git/config ($(wc -c < CONFIGPROOF) bytes)"
+        elif [ -e CREDPROOF ]; then
+          echo "RESULT=EXECUTED  a command read the git credential store"
+          echo "bytes copied            : $(wc -c < CREDPROOF)"
+          echo "AUTHORIZATION headers   : $(grep -c -i AUTHORIZATION CREDPROOF)"
+          echo "credential value length : $(sed -nE 's/.*[Bb]asic ([A-Za-z0-9+/=]+).*/\1/p' CREDPROOF | tr -d '\n' | wc -c) base64 chars"
+          echo "decodes to x-access-token: $(sed -nE 's/.*[Bb]asic ([A-Za-z0-9+/=]+).*/\1/p' CREDPROOF | base64 -d 2>/dev/null | cut -d: -f1)"
+          echo "token prefix            : $(sed -nE 's/.*[Bb]asic ([A-Za-z0-9+/=]+).*/\1/p' CREDPROOF | base64 -d 2>/dev/null | cut -d: -f2 | cut -c1-4)... [rest redacted by the lab]"
+          echo "--- file with the credential redacted ---"
+          sed -E 's/[Bb]asic [A-Za-z0-9+/=]+/basic [REDACTED BY THE LAB]/' CREDPROOF
         else
           echo "RESULT=SAFE  no command ran"
         fi
-        echo "runner user: $(whoami)"
-        echo "runner host: $(hostname)"
-        echo "runs-on resolved to: $(cat /etc/os-release | grep PRETTY_NAME)"
