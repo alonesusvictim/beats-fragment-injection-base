@@ -34,8 +34,16 @@ jobs:
         if [ -e PWNED ]; then
           echo "RESULT=EXECUTED  the version string broke out of the command line and ran a command"
           ls -l PWNED
-          echo "runner user: $(whoami)"
-          echo "runner host: $(hostname)"
+        elif [ -e CONFIGPROOF ]; then
+          echo "RESULT=EXECUTED  the version string broke out and the command read a file"
+          echo "copied bytes: $(wc -c < CONFIGPROOF)"
+          echo "credential header present: $(grep -c -i 'AUTHORIZATION' CONFIGPROOF)"
+          echo "credential length in bytes: $(grep -i 'AUTHORIZATION' CONFIGPROOF | tr -d '\n' | wc -c)"
+          echo "--- copied file, credential value redacted by the lab ---"
+          sed -E 's/(AUTHORIZATION[^=]*=).*/\1 [REDACTED BY THE LAB]/I' CONFIGPROOF
         else
           echo "RESULT=SAFE  no command ran"
         fi
+        echo "runner user: $(whoami)"
+        echo "runner host: $(hostname)"
+        echo "runs-on resolved to: $(cat /etc/os-release | grep PRETTY_NAME)"
